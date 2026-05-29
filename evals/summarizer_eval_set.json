@@ -1,0 +1,31 @@
+{
+  "eval_set_id": "summarizer_basic_eval_set",
+  "name": "Summarizer Agent Basic Evaluation",
+  "description": "Basic evaluation cases for the summarizer agent.",
+  "eval_cases": [
+    {
+      "eval_id": "summarize_short_text_001",
+      "conversation": [
+        {
+          "invocation_id": "invocation_001",
+          "user_content": {
+            "role": "user",
+            "parts": [
+              {
+                "text": "Summarize this text in one sentence: Cloud Run is a serverless platform for running containers without managing infrastructure."
+              }
+            ]
+          },
+          "final_response": {
+            "role": "model",
+            "parts": [
+              {
+                "text": "Cloud Run runs containers serverlessly without requiring infrastructure management."
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
