@@ -1,0 +1,28 @@
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "-f"
+      - "deploy/Dockerfile"
+      - "-t"
+      - "europe-north1-docker.pkg.dev/$PROJECT_ID/agentic-ai-engine/agentic-ai-engine:latest"
+      - "."
+
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "push"
+      - "europe-north1-docker.pkg.dev/$PROJECT_ID/agentic-ai-engine/agentic-ai-engine:latest"
+
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: "gcloud"
+    args:
+      - "run"
+      - "deploy"
+      - "agentic-ai-engineering"
+      - "--image=europe-north1-docker.pkg.dev/$PROJECT_ID/agentic-ai-engine/agentic-ai-engine:latest"
+      - "--region=europe-north1"
+      - "--platform=managed"
+      - "--allow-unauthenticated"
+
+images:
+  - "europe-north1-docker.pkg.dev/$PROJECT_ID/agentic-ai-engine/agentic-ai-engine:latest"
