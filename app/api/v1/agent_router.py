@@ -4,6 +4,7 @@ import base64
 
 from fastapi import APIRouter, Query
 from fastapi.responses import Response
+from google.cloud import storage
 from pydantic import BaseModel
 
 from app.agent_repo import list_agents
@@ -11,7 +12,6 @@ from app import config
 from app.context.artifacts.artifact_service_handler import artifact_service_handler
 from app.context.memory.memory_bank_handler import memory_bank_handler
 from app.context.rag.rag_engine_handler import rag_engine_handler
-from app.handlers.session_handler import session_handler
 
 agent_router = APIRouter(prefix="/api/v1", tags=["agents"])
 
@@ -24,17 +24,20 @@ async def get_agents() -> dict:
 
 @agent_router.get("/artifacts")
 async def get_artifacts(agent_id: str = Query(..., description="Agent ID")) -> dict:
-    """Return all artifact filenames for the given agent's current session."""
-    app_name = f"{agent_id}_app"
-    session_id = session_handler._agent_session_mapping.get(agent_id)
-    if not session_id:
-        return {"artifacts": []}
-    keys = await artifact_service_handler.service.list_artifact_keys(
-        app_name=app_name,
-        user_id=config.USER_ID,
-        session_id=session_id,
-    )
-    return {"artifacts": keys}
+    """Return artifact filenames from the configured GCS bucket."""
+    client = storage.Client(project=config.GOOGLE_CLOUD_PROJECT)
+    bucket = client.bucket(config.GOOGLE_CLOUD_STORAGE_BUCKET)
+
+    prefix = f"_app/{config.USER_ID}/"
+    blobs = client.list_blobs(bucket, prefix=prefix)
+
+    filenames = set()
+    for blob in blobs:
+        parts = blob.name.split("/")
+        if len(parts) >= 4:
+            filenames.add(parts[-2])
+
+    return {"artifacts": sorted(filenames)}
 
 
 @agent_router.get("/artifacts/download")
@@ -42,29 +45,25 @@ async def download_artifact(
     agent_id: str = Query(..., description="Agent ID"),
     filename: str = Query(..., description="Artifact filename"),
 ) -> Response:
-    """Download a single artifact by filename."""
-    app_name = f"{agent_id}_app"
-    session_id = session_handler._agent_session_mapping.get(agent_id)
-    if not session_id:
-        return Response(content="No session found", status_code=404)
+    """Download the latest version of an artifact from GCS."""
+    client = storage.Client(project=config.GOOGLE_CLOUD_PROJECT)
+    bucket = client.bucket(config.GOOGLE_CLOUD_STORAGE_BUCKET)
 
-    part = await artifact_service_handler.service.load_artifact(
-        app_name=app_name,
-        user_id=config.USER_ID,
-        session_id=session_id,
-        filename=filename,
-    )
-    if part is None:
+    prefix = f"_app/{config.USER_ID}/"
+    blobs = list(client.list_blobs(bucket, prefix=prefix))
+
+    matching = [
+        blob for blob in blobs
+        if f"/{filename}/" in blob.name
+    ]
+
+    if not matching:
         return Response(content="Artifact not found", status_code=404)
 
-    if part.text:
-        data = part.text.encode("utf-8")
-        mime = "text/plain"
-    elif part.inline_data:
-        data = part.inline_data.data
-        mime = part.inline_data.mime_type or "application/octet-stream"
-    else:
-        return Response(content="Artifact has no content", status_code=404)
+    latest_blob = sorted(matching, key=lambda b: b.name)[-1]
+    data = latest_blob.download_as_bytes()
+
+    mime = "text/markdown" if filename.endswith(".md") else "application/octet-stream"
 
     return Response(
         content=data,
@@ -98,9 +97,6 @@ async def get_memories(
         return {"memories": facts}
     except Exception as e:
         return {"memories": [], "error": str(e)}
-
-
-# ── RAG corpus management ───────────────────────────────────────────────
 
 
 @agent_router.get("/rag/files")

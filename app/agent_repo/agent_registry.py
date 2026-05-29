@@ -14,6 +14,7 @@ from app.agent_repo.summarizer_agent import summarizer_agent
 from app.agent_repo.memory_agent import memory_agent
 from app.agent_repo.tennis_agent_team import tennis_agent_team
 from app.agent_repo.critique_agent import critique_agent
+from app.agent_repo.artifact_agent import artifact_agent
 
 try:
     from google.adk.tools import preload_memory, load_memory
@@ -56,6 +57,12 @@ AGENT_REGISTRY: dict[str, dict] = {
         "description": "Evaluates outputs and detects issues.",
         "icon": "🧐",
     },
+    "artifact_agent": {
+        "agent": artifact_agent,
+        "label": "Artifacts",
+        "description": "Creates and loads markdown artifacts.",
+        "icon": "📎",
+    },
 }
 
 
@@ -75,6 +82,7 @@ def list_agents() -> list[dict]:
             "icon": meta["icon"],
             "has_tools": bool(getattr(meta["agent"], "tools", None)),
             "has_memory": has_memory_tools(meta["agent"]),
+            "has_artifacts": True,
         }
         for agent_id, meta in AGENT_REGISTRY.items()
     ]
