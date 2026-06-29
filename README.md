@@ -1,3 +1,32 @@
+# CAS AI Operations – Agentic AI Ops Project
+
+This repository contains my Agentic AI Operations project work for the CAS AI Operations module.
+
+## Implemented project components
+
+- Summarizer Agent for text and document summarization
+- Google Search and URL fetching functionality
+- MCP fetch server for external webpage retrieval
+- Tennis Agent Team as a custom multi-agent use case
+- Critique Agent for reviewing generated outputs
+- Memory-related functionality
+- Artifact handling for saving and loading generated content
+- RAG-related functionality
+- Basic evaluation setup
+- Local FastAPI/WebSocket backend and chat UI
+
+## Submission note
+
+Deployment is not required for this assignment. The project is submitted via GitHub repository link.
+
+## Environment
+
+Required environment variables are documented in `.env.example`.
+
+No secrets are committed to this repository.
+
+---
+
 # Agentic AI Engineering
 
 This guide walks you through setting up a GCP account, the Google Cloud CLI, and the agentic AI application that we will extend throughout the lecture. Follow all steps in order. By the end you will have the application running locally — a greeting agent will be ready to answer your questions and help you prepare for the upcoming sessions.
